@@ -16,44 +16,59 @@ class ScheduleSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if not any(attrs.values()):
             raise serializers.ValidationError('Должно быть указано время хотя бы для одного дня недели.')
+        return super().validate(attrs)
 
 
 class IntervalSerializer(serializers.ModelSerializer):
     """Сериализатор для описания интервала между напоминаниями"""
 
+    interval_string = serializers.SerializerMethodField('get_interval_string')
+
     class Meta:
         model = Interval
-        fields = '__all__'
+        fields = ('id', 'interval_string', 'start_time', 'end_time', 'is_active', 'last_event', 'interval')
+        extra_kwargs = {
+            'interval': {'write_only': True},
+            'interval_string': {'read_only': True},
+            'is_active': {'read_only': True},
+            'last_event': {'read_only': True},
+        }
 
     def validate(self, attrs):
         if bool(attrs.get('start_time')) != bool(attrs.get('end_time')):
             raise serializers.ValidationError(
                 'Либо установите и время старта, и время окончания, либо оба эти поля должны быть пусты.'
             )
+        return super().validate(attrs)
 
     def validate_interval(self, value):
-        HOURS_IN_DAY = 24
         DAYS_IN_WEEK = 7
 
-        if type(value) is not int or value <= 0:
-            raise serializers.ValidationError(
-                'Интервал должен быть выражен целым числом, равным нужному количеству часов.'
-            )
-
-        if value > HOURS_IN_DAY * DAYS_IN_WEEK:
+        if value > timedelta(days=DAYS_IN_WEEK):
             raise serializers.ValidationError('Нельзя установить интервал продолжительностью больше недели')
-        return timedelta(hours=value)
+        return super().validate(value)
+
+    def get_interval_string(self, obj):
+        total_seconds = round(obj.interval.total_seconds())
+        return f'Через каждые {total_seconds // 3600} часов'
 
 
 class HabitSerializer(serializers.ModelSerializer):
     """Сериализатор для обработки данных о привычке"""
 
-    schedule = ScheduleSerializer()
-    interval = IntervalSerializer()
+    schedule = ScheduleSerializer(required=False, allow_null=True)
+    interval = IntervalSerializer(required=False, allow_null=True)
+    lead_time_string = serializers.SerializerMethodField()
 
     class Meta:
         model = Habit
-        read_only_fields = ('user', )
+        fields = ('user', 'place', 'operation', 'is_enjoyable', 'reward', 'lead_time', 'lead_time_string',
+                  'is_public', 'schedule', 'interval', 'related_habit')
+        extra_kwargs = {
+            'lead_time': {'write_only': True},
+            'lead_time_string': {'read_only': True},
+            'user': {'read_only': True}
+        }
 
     def validate(self, attrs):
         errors = []
@@ -101,28 +116,41 @@ class HabitSerializer(serializers.ModelSerializer):
         schedule_data = validated_data.pop('schedule', None)
         interval_data = validated_data.pop('interval', None)
 
-        if self.context['request'].method == 'PUT' and not (schedule_data or interval_data):
+        if self.context['request'].method == 'PUT':
             if instance.schedule:
                 instance.schedule.delete()
+                instance.schedule = None
             if instance.interval:
                 instance.interval.delete()
+                instance.interval = None
 
-        if schedule_data is not None:
+        if schedule_data:
             if instance.schedule:
                 for key, value in schedule_data.items():
                     setattr(instance.schedule, key, value)
                 instance.schedule.save()
-            elif instance.interval:
-                instance.interval.delete()
+            else:
                 instance.schedule = Schedule.objects.create(**schedule_data)
+                if instance.interval:
+                    instance.interval.delete()
 
-        if interval_data is not None:
+        if interval_data:
             if instance.interval:
                 for key, value in interval_data.items():
                     setattr(instance.interval, key, value)
                 instance.interval.save()
-            elif instance.schedule:
-                instance.schedule.delete()
+            else:
                 instance.interval = Interval.objects.create(**interval_data)
+                if instance.schedule:
+                    instance.schedule.delete()
+
+        instance.save()
 
         return super().update(instance, validated_data)
+
+    def get_lead_time_string(self, obj):
+        seconds = round(obj.lead_time.total_seconds())
+        return f'В течение {seconds} секунд'
+
+
+

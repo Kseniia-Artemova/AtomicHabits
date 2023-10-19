@@ -85,6 +85,8 @@ class Habit(models.Model):
             return (primary_text + interval_text + place).capitalize()
         elif self.schedule:
             return (primary_text + str(self.schedule) + place).capitalize()
+        else:
+            return (primary_text + place).capitalize()
 
     class Meta:
         verbose_name = 'Привычка'
