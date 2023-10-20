@@ -14,6 +14,11 @@ class User(AbstractUser):
         verbose_name='Уникальный идентификатор пользователя телеграм'
     )
 
+    telegram_user_id = models.PositiveIntegerField(unique=True,
+                                                   null=True,
+                                                   blank=True,
+                                                   verbose_name='Уникальный идентификатор чата телеграм')
+
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['telegram_username']
 

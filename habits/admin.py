@@ -15,5 +15,5 @@ class ScheduleAdmin(admin.ModelAdmin):
 
 
 @admin.register(Interval)
-class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'interval', 'start_time', 'end_time', 'is_active', 'last_event')
+class IntervalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'interval', 'start_time', 'end_time', 'last_event')

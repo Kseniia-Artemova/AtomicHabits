@@ -43,7 +43,6 @@ class Interval(models.Model):
     interval = models.DurationField(verbose_name='Интервал между напоминаниями, часы')
     start_time = models.TimeField(**NULLABLE, verbose_name='Время старта')
     end_time = models.TimeField(**NULLABLE, verbose_name='Время окончания')
-    is_active = models.BooleanField(default=True, verbose_name='Активное напоминание')
     last_event = models.DateTimeField(**NULLABLE, verbose_name='Время последнего напоминания')
 
     def __str__(self):
@@ -78,7 +77,7 @@ class Habit(models.Model):
                                       verbose_name='Связанная привычка')
 
     def __str__(self):
-        primary_text = f'Я буду {self.operation} '
+        primary_text = f'{self.operation} '
         place = f' {self.place}' if self.place else ''
         if self.interval:
             interval_text = f'с интервалом в {self.interval.interval} часов'
@@ -86,7 +85,7 @@ class Habit(models.Model):
         elif self.schedule:
             return (primary_text + str(self.schedule) + place).capitalize()
         else:
-            return (primary_text + place).capitalize()
+            return (primary_text + place.strip()).capitalize()
 
     class Meta:
         verbose_name = 'Привычка'
