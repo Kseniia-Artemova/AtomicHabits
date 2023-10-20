@@ -26,11 +26,10 @@ class IntervalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Interval
-        fields = ('id', 'interval_string', 'start_time', 'end_time', 'is_active', 'last_event', 'interval')
+        fields = ('id', 'interval_string', 'start_time', 'end_time', 'last_event', 'interval')
         extra_kwargs = {
             'interval': {'write_only': True},
             'interval_string': {'read_only': True},
-            'is_active': {'read_only': True},
             'last_event': {'read_only': True},
         }
 
