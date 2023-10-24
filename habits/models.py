@@ -19,6 +19,8 @@ class Schedule(models.Model):
     saturday = models.TimeField(**NULLABLE, verbose_name='Суббота, время выполнения')
     sunday = models.TimeField(**NULLABLE, verbose_name='Воскресенье, время выполнения')
 
+    last_event = models.DateField(**NULLABLE, verbose_name='Дата последней отправки напоминания')
+
     def __str__(self):
         days_of_week = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
         schedule = []
@@ -77,15 +79,15 @@ class Habit(models.Model):
                                       verbose_name='Связанная привычка')
 
     def __str__(self):
-        primary_text = f'{self.operation} '
+        primary_text = f'{self.operation}'
         place = f' {self.place}' if self.place else ''
         if self.interval:
             interval_text = f'с интервалом в {self.interval.interval} часов'
-            return (primary_text + interval_text + place).capitalize()
+            return (primary_text + ' ' + interval_text + place).capitalize()
         elif self.schedule:
-            return (primary_text + str(self.schedule) + place).capitalize()
+            return (primary_text + ' ' + str(self.schedule) + place).capitalize()
         else:
-            return (primary_text + place.strip()).capitalize()
+            return (primary_text + place).capitalize()
 
     class Meta:
         verbose_name = 'Привычка'

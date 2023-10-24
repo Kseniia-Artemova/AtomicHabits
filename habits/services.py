@@ -20,24 +20,24 @@ def send_scheduled_reminder() -> None:
     ]
 
     current_datetime = timezone.now()
+    current_date = timezone.now().date()
     current_time = current_datetime.time().replace(second=0, microsecond=0)
-    next_minute_datetime = current_datetime + timedelta(minutes=1)
-    next_minute_time = next_minute_datetime.time().replace(second=0, microsecond=0)
     day_of_week = current_datetime.weekday()
 
     current_day_field = days_fields[day_of_week]
 
     habits = Habit.objects.filter(
         user__telegram_user_id__isnull=False,
-        **{f'schedule__{current_day_field}__range': (current_time, next_minute_time)}
-    ).select_related('user', 'schedule')
+        **{f'schedule__{current_day_field}__isnull': False,}
+    ).exclude(schedule__last_event=current_date).select_related('user', 'schedule')
 
     for habit in habits:
-        time_habit = getattr(habit.schedule, current_day_field)
-        text = get_reminder_text(habit, time_habit)
-
-        if habit.user.telegram_user_id:
+        if getattr(habit.schedule, current_day_field) <= current_time:
+            time_habit = getattr(habit.schedule, current_day_field)
+            text = get_reminder_text(habit, time_habit)
             send_reminder(habit.user, text)
+            habit.schedule.last_event = current_date
+            habit.schedule.save(update_fields=['last_event'])
 
 
 def send_interval_reminder() -> None:
@@ -72,11 +72,11 @@ def is_reminder_time_active(current_time: time, start_time: time, end_time: time
     """
 
     if start_time and end_time:
-        if start_time < end_time and (current_time < start_time or current_time > end_time):
-            return False
-        if start_time > end_time and (current_time > start_time or current_time < end_time):
-            return False
-    return True
+        if start_time < end_time and (start_time <= current_time < end_time):
+            return True
+        if start_time > end_time and (current_time >= start_time or current_time <= end_time):
+            return True
+    return False
 
 
 def send_reminder(user: User, text: str) -> None:
@@ -106,7 +106,7 @@ def get_reminder_text(habit: Habit, row_time: time):
     if habit.schedule:
         time_habit = f'Когда: сегодня в {formatted_time}'
     elif habit.interval:
-        time_habit = f'Когда: сейчас {formatted_time}'
+        time_habit = f'Когда: сейчас, в {formatted_time}'
 
     text = (f'Напоминание! Формируем привычку, следуй указанию\n'
             f'\n'

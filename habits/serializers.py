@@ -11,7 +11,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Schedule
-        fields = '__all__'
+        exclude = ('last_event', )
 
     def validate(self, attrs):
         if not any(attrs.values()):
@@ -69,28 +69,42 @@ class HabitSerializer(serializers.ModelSerializer):
             'user': {'read_only': True}
         }
 
+    def validate_lead_time(self, value):
+        if value and value.seconds > 120:
+            raise serializers.ValidationError('Время выполнения должно быть не более 120 секунд.')
+        return super().validate(value)
+
     def validate(self, attrs):
         errors = []
 
-        if attrs.get('lead_time') and attrs.get('lead_time').seconds > 120:
-            errors.append('Время выполнения должно быть не более 120 секунд.')
+        request_method = self.context['request'].method
+        related_habit = None
+        reward = None
+        is_enjoyable = None
 
-        if attrs.get('is_enjoyable'):
-            if attrs.get('schedule') or attrs.get('interval'):
-                errors.append('У приятной привычки не может быть своего расписания.')
-            if attrs.get('reward') or attrs.get('related_habit'):
-                errors.append(
-                    'У приятной привычки не может быть вознаграждения или связанной привычки.'
-                )
-        else:
+        if request_method in ('PUT', 'POST'):
+            related_habit = attrs.get('related_habit')
+            reward = attrs.get('reward')
+            is_enjoyable = attrs.get('is_enjoyable')
+
             if bool(attrs.get('schedule')) == bool(attrs.get('interval')):
                 errors.append('Нужно выбрать что-то одно: расписание или интервал.')
-            if attrs.get('related_habit') and attrs.get('reward'):
-                errors.append(
-                    'Может быть указано только что-то одно: либо вознаграждение, либо связанная привычка.'
-                )
-            if attrs.get('related_habit') and not attrs.get('related_habit').is_enjoyable:
-                errors.append('Связанная привычка должна быть приятной.')
+
+        elif request_method == 'PATCH':
+            related_habit = attrs.get('related_habit', self.instance.related_habit)
+            reward = attrs.get('reward', self.instance.reward)
+            is_enjoyable = attrs.get('is_enjoyable', self.instance.is_enjoyable)
+
+        if related_habit and reward:
+            errors.append('Может быть указано только что-то одно: либо вознаграждение, либо связанная привычка.')
+        if related_habit and not related_habit.is_enjoyable:
+            errors.append('Связанная привычка должна быть приятной.')
+
+        if is_enjoyable:
+            if attrs.get('schedule') or attrs.get('interval'):
+                errors.append('У приятной привычки не может быть своего расписания.')
+            if reward or related_habit:
+                errors.append('У приятной привычки не может быть вознаграждения или связанной привычки.')
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -115,14 +129,6 @@ class HabitSerializer(serializers.ModelSerializer):
         schedule_data = validated_data.pop('schedule', None)
         interval_data = validated_data.pop('interval', None)
 
-        if self.context['request'].method == 'PUT':
-            if instance.schedule:
-                instance.schedule.delete()
-                instance.schedule = None
-            if instance.interval:
-                instance.interval.delete()
-                instance.interval = None
-
         if schedule_data:
             if instance.schedule:
                 for key, value in schedule_data.items():
@@ -131,7 +137,9 @@ class HabitSerializer(serializers.ModelSerializer):
             else:
                 instance.schedule = Schedule.objects.create(**schedule_data)
                 if instance.interval:
-                    instance.interval.delete()
+                    interval = instance.interval
+                    instance.interval = None
+                    interval.delete()
 
         if interval_data:
             if instance.interval:
@@ -141,15 +149,19 @@ class HabitSerializer(serializers.ModelSerializer):
             else:
                 instance.interval = Interval.objects.create(**interval_data)
                 if instance.schedule:
-                    instance.schedule.delete()
+                    schedule = instance.schedule
+                    instance.schedule = None
+                    schedule.delete()
 
         instance.save()
 
         return super().update(instance, validated_data)
 
     def get_lead_time_string(self, obj):
-        seconds = round(obj.lead_time.total_seconds())
-        return f'В течение {seconds} секунд'
+        if obj.lead_time:
+            seconds = round(obj.lead_time.total_seconds())
+            return f'В течение {seconds} секунд'
+        return
 
 
 
