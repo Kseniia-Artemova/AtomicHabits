@@ -9,7 +9,7 @@ from habits.serializers import HabitSerializer
 
 
 class PublicHabitListAPIView(ListAPIView):
-    """Представление для отображения списка всех публичных привычек"""
+    """Отображение списка публичных привычек"""
 
     serializer_class = HabitSerializer
     permission_classes = [IsAuthenticated]
@@ -20,7 +20,7 @@ class PublicHabitListAPIView(ListAPIView):
 
 
 # class UserHabitListAPIView(ListAPIView):
-#     """Представление для отображения списка привычек, принадлежащих текущему пользователю"""
+#     """Отображение списка привычек, принадлежащих текущему пользователю"""
 #
 #     serializer_class = HabitSerializer
 #     permission_classes = [IsAuthenticated]
@@ -31,7 +31,7 @@ class PublicHabitListAPIView(ListAPIView):
 #
 #
 # class HabitCreateAPIView(CreateAPIView):
-#     """Представление для создания привычки"""
+#     """Создание привычки"""
 #
 #     serializer_class = HabitSerializer
 #     permission_classes = [IsAuthenticated]
@@ -41,7 +41,7 @@ class PublicHabitListAPIView(ListAPIView):
 #
 #
 # class HabitRetrieveAPIView(RetrieveAPIView):
-#     """Представление для просмотра привычки"""
+#     """Просмотр привычки"""
 #
 #     serializer_class = HabitSerializer
 #     permission_classes = [IsAuthenticated, OnlyOwnerOrSuperuser]
@@ -49,7 +49,7 @@ class PublicHabitListAPIView(ListAPIView):
 #
 #
 # class HabitUpdateAPIView(UpdateAPIView):
-#     """Представление для редактирования привычки"""
+#     """Редактирование привычки"""
 #
 #     serializer_class = HabitSerializer
 #     permission_classes = [IsAuthenticated, OnlyOwnerOrSuperuser]
@@ -57,7 +57,7 @@ class PublicHabitListAPIView(ListAPIView):
 #
 #
 # class HabitDestroyAPIView(DestroyAPIView):
-#     """Представление для удаления привычки"""
+#     """Удаление привычки"""
 #
 #     permission_classes = [IsAuthenticated, OnlyOwnerOrSuperuser]
 #     queryset = Habit.objects.all()
@@ -65,11 +65,12 @@ class PublicHabitListAPIView(ListAPIView):
 
 # Мультидженерики
 # Преимущество в одном url на них, с разницей наличии/отсутствии id
-# Это более правильный способ работы с REST
+# Это более правильный способ работы с REST API
 class HabitRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     """
     Представление для отображения привычек,
     обрабатывает методы 'GET', 'DELETE', 'PUT', 'PATCH'
+
     Доступ только для владельца или суперюзера
     """
 
@@ -87,6 +88,7 @@ class HabitListCreateAPIView(ListCreateAPIView):
     """
     Представление для отображения привычек,
     обрабатывает методы 'GET', 'POST'
+
     Доступ только для владельца или суперюзера
     """
 
@@ -100,5 +102,3 @@ class HabitListCreateAPIView(ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-

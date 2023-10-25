@@ -5,7 +5,10 @@ from users.validators import TelegramNicknameValidator
 
 
 class User(AbstractUser):
-    """Модель для описания пользователя"""
+    """
+    Пользователь
+    Обязательно должен иметь уникальный юзернейм и указать логин в telegram
+    """
 
     telegram_username = models.CharField(
         max_length=150,

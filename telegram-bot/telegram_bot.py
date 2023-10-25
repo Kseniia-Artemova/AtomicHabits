@@ -14,6 +14,8 @@ from users.models import User
 
 from asgiref.sync import sync_to_async
 
+# Вся эта штука нужна для сбора информации об id юзера в telegram
+# и записи его в базу данных
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

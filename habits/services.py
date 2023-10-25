@@ -1,11 +1,11 @@
 import logging
-from datetime import timedelta, time
+from datetime import time
 
 import requests
 from django.utils import timezone
 
 from config import settings
-from habits.models import Habit, Interval
+from habits.models import Habit
 from users.models import User
 
 logger = (logging.getLogger(__name__))
@@ -32,7 +32,7 @@ def send_scheduled_reminder() -> None:
     ).exclude(schedule__last_event=current_date).select_related('user', 'schedule')
 
     for habit in habits:
-        if getattr(habit.schedule, current_day_field) <= current_time:
+        if getattr(habit.schedule, current_day_field).replace(second=0, microsecond=0) <= current_time:
             time_habit = getattr(habit.schedule, current_day_field)
             text = get_reminder_text(habit, time_habit)
             send_reminder(habit.user, text)
@@ -72,11 +72,11 @@ def is_reminder_time_active(current_time: time, start_time: time, end_time: time
     """
 
     if start_time and end_time:
-        if start_time < end_time and (start_time <= current_time < end_time):
-            return True
-        if start_time > end_time and (current_time >= start_time or current_time <= end_time):
-            return True
-    return False
+        if start_time < end_time and not (start_time <= current_time < end_time):
+            return False
+        if start_time > end_time and not (current_time >= start_time or current_time <= end_time):
+            return False
+    return True
 
 
 def send_reminder(user: User, text: str) -> None:
@@ -95,7 +95,7 @@ def send_reminder(user: User, text: str) -> None:
         logger.error(f"Ошибка при отправке сообщения пользователю {user.telegram_username}. Ошибка: {e}")
 
 
-def get_reminder_text(habit: Habit, row_time: time):
+def get_reminder_text(habit: Habit, row_time: time) -> str:
     """Возвращает готовый текст напоминания о привычке для отправки пользователям"""
 
     place = habit.place if habit.place else ''

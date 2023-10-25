@@ -9,7 +9,7 @@ NULLABLE = {'null': True, 'blank': True}
 
 
 class Schedule(models.Model):
-    """Модель для описания расписания привычки по дням недели"""
+    """Расписание для привычки по дням недели"""
 
     monday = models.TimeField(**NULLABLE, verbose_name='Понедельник, время выполнения')
     tuesday = models.TimeField(**NULLABLE, verbose_name='Вторник, время выполнения')
@@ -40,7 +40,7 @@ class Schedule(models.Model):
 
 
 class Interval(models.Model):
-    """Модель для описания интервала между напоминаниями о привычке"""
+    """Интервал между напоминаниями о привычке"""
 
     interval = models.DurationField(verbose_name='Интервал между напоминаниями, часы')
     start_time = models.TimeField(**NULLABLE, verbose_name='Время старта')
@@ -57,7 +57,8 @@ class Interval(models.Model):
 
 class Habit(models.Model):
     """
-    Модель для описания привычки.
+    Привычка.
+
     Можно выбрать либо расписание по дням недели, либо интервал между напоминаниями о привычке (выражен в часах)
     """
 

@@ -4,7 +4,7 @@ from users.models import User
 
 
 class Command(BaseCommand):
-    """Команда для создания админа (суперюзера) c заданными в файле .env логином и паролем"""
+    """Команда для создания админа (суперюзера) с заданными в файле .env логином и паролем"""
 
     def handle(self, *args, **options):
         user, created = User.objects.get_or_create(
