@@ -43,6 +43,18 @@ services:
     env_file:
       - .env.docker
 
+  telegram-bot:
+    build: .
+    tty: true
+    command: sh -c "python ./telegram-bot/telegram_bot.py"
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      courses:
+        condition: service_started
+    env_file:
+      - .env.docker
+
   celery:
     build: .
     tty: true
