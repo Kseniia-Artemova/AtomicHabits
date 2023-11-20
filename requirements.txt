@@ -88,3 +88,4 @@ vine==5.0.0
 virtualenv==20.24.5
 wcwidth==0.2.8
 zipp==3.17.0
+gunicorn
