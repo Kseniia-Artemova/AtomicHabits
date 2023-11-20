@@ -42,6 +42,8 @@ services:
       python manage.py collectstatic --no-input"
     env_file:
       - .env.docker
+    volumes:
+      - ./local_static:/app/static
 
   telegram-bot:
     build: .
@@ -89,3 +91,4 @@ services:
 
 volumes:
   pg_data:
+  local_static:
