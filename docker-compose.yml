@@ -84,6 +84,9 @@ services:
     command: gunicorn --workers 3 --bind 0.0.0.0:8000 config.wsgi
     ports:
       - "8001:8000"
+    depends_on:
+      app:
+        condition: service_completed_successfully
     env_file:
       - .env.docker
 
